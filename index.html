@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+
+  
+<style type="text/css">
+	.stroke {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+}
+
+.fill {
+  fill: #fff;
+}
+
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .5px;
+  stroke-opacity: .5;
+}
+
+.land {
+  fill: #aaa;
+}
+
+.boundary {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.arc {
+	stroke: #00FFFF;
+}
+
+body {
+  background: #000;
+}
+
+
+</style>
+<body>
+<div id='map'>
+
+</div>
+
+<script type="text/javascript">
+
+var width = 960,
+    height = 600,
+    speed = 1e-2,
+    start = Date.now();
+
+var sphere = {type: "Sphere"};
+
+var projection = d3.geo.orthographic()
+    .scale(height / 2.1)
+    .translate([width / 2, height / 2])
+    .clipAngle(90)
+    .precision(.5);
+
+var graticule = d3.geo.graticule();
+
+
+var canvas = d3.select("body").append("canvas")
+    .attr("width", width)
+    .attr("height", height);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height); 
+
+
+var context = canvas.node().getContext("2d");
+
+var path = d3.geo.path()
+    .projection(projection)
+    .context(context);
+
+ 
+
+d3.json("https://d3js.org/world-110m.v1.json", function(error, topo) {
+
+var selected = false;
+
+  var land = topojson.feature(topo, topo.objects.land),
+      borders = topojson.feature(topo, topo.objects.countries),
+      grid = graticule();
+
+ 	
+  svg.insert("path", ".graticule")
+      .datum(topojson.feature(topo, topo.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(topo, topo.objects.countries, function(a, b) { return a !== b; }))
+      .attr("class", "boundary")
+      .attr("d", path);
+
+  d3.timer(function() {
+    projection.rotate([speed * (Date.now() - start), -15]);
+
+    context.clearRect(0, 0, width, height);
+
+    context.beginPath();
+    path(sphere);
+    context.lineWidth = 3;
+    context.strokeStyle = "#000";
+    context.stroke();
+
+    context.beginPath();
+    path(sphere);
+    context.fillStyle = "#fff";
+    context.fill();
+
+    context.beginPath();
+    path(land);
+    context.fillStyle = "#222";
+    context.fill();
+
+    context.beginPath();
+    path(borders);
+    context.lineWidth = .5;
+    context.strokeStyle = "#000";
+    context.stroke();
+
+    context.beginPath();
+    path(grid);
+    context.lineWidth = .25;
+    context.strokeStyle = "rgba(119,119,119,.5)";
+    context.stroke();
+
+    context.beginPath();
+	context.arc(300,100, 100, 1, 1 * Math.PI);
+    context.strokeStyle ="#F71212";
+    context.lineWidth = 5;
+	context.stroke();
+
+
+    if (selected !== false) {
+      context.beginPath();
+      path(borders.features[selected]);
+      context.fillStyle = "#0ad";
+      context.fill();
+    }
+  });
+
+
+ drawarcs(svg);
+
+ 
+
+    /*
+	var svg = d3.select("#map").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+	svg.append("path")
+		.datum(graticule)
+		.attr("class", "graticule")
+		.attr("d", path);
+	
+	svg.insert("path", ".graticule")
+		.datum(topojson.feature(topo, topo.objects.land))
+		.attr("class", "land")
+		.attr("d", path);
+
+	svg.insert("path", ".graticule")
+		.datum(topojson.mesh(topo, topo.objects.countries, function(a, b) { return a !== b; }))
+		.attr("class", "boundary")
+		.attr("d", path);
+
+	
+*/
+//d3.select(self.frameElement).style("height", height + "px");
+
+
+});
+
+
+
+var tradedata = [
+  {
+ 	destination: {latitude: -23.3, longitude: 132.2},
+ 	name: 'Australia',
+ 	trade: 0
+ 	},{
+
+      destination: { latitude: -69.445469, longitude: 45.253783 },
+      name: 'South Africa',
+      trade : 0
+  },{
+      destination: { latitude: 31.7, longitude: 106.2 },
+      name: 'China',
+      trade : 0
+  },{
+      destination: { latitude: 36.1, longitude: 127.7 },
+      name: 'S. Korea',
+      trade: 0
+  },{
+      destination: { latitude: 53.6, longitude: -2.3},
+      name: 'Great Britain',
+      trade: 0
+  },{
+      destination: { latitude: 61.2, longitude: 9.7144087 },
+      name: 'Norway',
+      trade: 0
+  },{
+      destination: { latitude: 61.6, longitude: 15.4 },
+      name: 'Sweden',
+      trade: 0
+  },{
+      destination: { latitude: 64.93, longitude: -19.02},
+      name: 'Iceland',
+      trade: 0
+  },{
+      destination: { latitude: 20.9, longitude: -101.5 },
+      name: 'Mexico',
+      trade: 0
+  },{
+      destination: { latitude: -14.0, longitude: -47.643501 },
+      name: 'Brazil',
+      trade: 0
+ },{
+      destination: {  latitude: 55.86, longitude: -112.1 },
+      name: 'Canada',
+      trade: 0
+  }
+];
+
+
+
+function drawarcs(svg) {
+
+	var arcs = svg.append("g").selectAll('path.datamaps-arc').data(tradedata, JSON.stringify);
+  
+	arcs
+		.enter()
+		.append('path')
+		.attr('class','arc')
+		.attr('d', function(datum) {
+			var origin = projection([24.7,-28.5]);
+			var dest = projection([datum.destination.longitude, datum.destination.latitude]);
+			var mid = [(origin[0] + dest[0]) / 2, (origin[1] + dest[1]) / 2];
+			
+			//define handle points for Bezier curves. Higher values for curveoffset will generate more pronounced curves.
+			var curveoffset = 50,midcurve = [mid[0]+curveoffset, mid[1]-curveoffset]
+		
+			// the scalar variable is used to scale the curve's derivative into a unit vector 
+			scalar = Math.sqrt(Math.pow(dest[0],2) - 2*dest[0]*midcurve[0]+Math.pow(midcurve[0],2)+Math.pow(dest[1],2)-2*dest[1]*midcurve[1]+Math.pow(midcurve[1],2));
+		
+			// move cursor to origin
+			return "M" + origin[0] + ',' + origin[1] 
+			// smooth curve to offset midpoint
+				+ "S" + midcurve[0] + "," + midcurve[1]
+			//smooth curve to destination	
+				+ "," + dest[0] + "," + dest[1]
+			// straight line towards original curve along scaled orthogonal vector (creates notched arrow head)
+				+ "l" + (0.3*datum.trade*(-dest[1]+midcurve[1])/scalar) + "," + (0.3*datum.trade*(dest[0]-midcurve[0])/scalar)
+				// smooth curve to midpoint	
+				+ "S" + (midcurve[0]) + "," + (midcurve[1]) 
+				//smooth curve to origin	
+				+ "," + origin[0] + "," + origin[1]
+		});
+
+		//arcs.transition().ease("elastic").duration(750);
+	/*
+	arcs.exit()
+		.transition()
+		.style('opacity', 0)
+		.duration(1000)
+		.remove();*/
+	
+
+}
+
+
+
+
+</script>
