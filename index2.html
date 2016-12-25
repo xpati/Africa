@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+
+<script src="country.js"></script>
+
+<style type="text/css">
+
+.stroke {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+}
+
+.fill {
+  fill: #fff;
+}
+
+.graticule {
+  fill: none;
+  stroke: #777;
+  stroke-width: .5px;
+  stroke-opacity: .5;
+}
+
+.land {
+  fill: #aaa;
+}
+
+.boundary {
+  fill: none;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+.arc {
+  stroke: #000;
+  fill: rgba(250,0,0,0.5);
+  stroke-width: 1;
+}
+
+body{
+
+  background-color: #000;
+}
+
+</style>
+<body>
+<div id='map'>
+
+</div>
+<script type="text/javascript">
+var svg,
+    width = 900,
+    height = 700;
+
+var projection = d3.geo.mercator()
+    .rotate([-10,0]).scale(height/5).translate([width / 2, height / 2]).clipExtent([[0,0.1*height],[width,height*0.85]]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var graticule = d3.geo.graticule();
+
+var path = d3.geo.path()
+  .projection(projection);
+
+  queue()
+  .defer(d3.json,'https://d3js.org/world-110m.v1.json')
+  .await(makeMyMap);
+
+function makeMyMap(error, world) {
+  if(error) { console.log(error); }
+
+  var svg = d3.select("#map").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    
+  svg.append("path")
+    .datum(graticule)
+    .attr("class", "graticule")
+    .attr("d", path);
+  
+  svg.insert("path", ".graticule")
+    .datum(topojson.feature(world, world.objects.land))
+    .attr("class", "land")
+    .attr("d", path);
+
+  svg.insert("path", ".graticule")
+    .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+    .attr("class", "boundary")
+    .attr("d", path);
+
+
+//var arr = _.values(country0[0]);
+
+//console.log(arr);
+
+
+
+var countries=[country0,country1,country2,country3,country4,country5,country6,country7,country8,country9,country10,country11,country12,country13];
+
+console.log(countries.length);
+
+var i=0;
+while (i<countries.length){
+  sleepLine(svg,countries, i);
+  i++;
+}
+
+
+
+d3.select(self.frameElement).style("height", height + "px");
+
+};
+
+
+function sleepLine(svg, countries,i){
+
+sleep( Math.floor((Math.random() * 1000) + 1)).then(() => {drawarcs(svg,countries[i]);});
+
+}
+
+
+function drawarcs(svg,dataCountry) {
+/*
+  var OriginX=[24.7,24.7,28];
+  var OriginY=[-28.5,-10.5,3];*/
+  //algeria, angola, South Sudan,liberia
+
+
+  var random=Math.floor((Math.random() * OriginX.length + 0));
+
+  var path = svg.append("g").selectAll('path.datamaps-arc').data(dataCountry, JSON.stringify);
+
+var color=["red","blue","yellow","green","orange","purple"]; 
+
+path
+    .enter()
+    .append('path')
+    .attr('d', function(datum) {
+      var origin = projection([OriginX[random],OriginY[random]]);
+      var dest = projection([datum.destination.longitude, datum.destination.latitude]);
+      var mid = [ (origin[0] + dest[0]) / 2, (origin[1] + dest[1]) / 2];
+      var curveoffset = 20;
+      var midcurve = [mid[0]+curveoffset, mid[1]-curveoffset];
+
+      console.log(datum.name);
+
+      return "M" + origin[0] + ',' + origin[1] 
+        + "S" + midcurve[0] + "," + midcurve[1]
+        + "," + dest[0] + "," + dest[1]
+    //   + "l" + 0 + "," + 0
+      //  + "S" + (midcurve[0]) + "," + (midcurve[1]) 
+       // + "," + origin[0] + "," + origin[1]
+    })
+   .attr("stroke",color[Math.floor((Math.random() * color.length + 0))])
+      //.attr("stroke", color[Math.floor((Math.random() * color.length + 0))] )
+      .attr("stroke-width", "1")
+      .attr("fill", "none");
+
+    var totalLength = path.node().getTotalLength();//263.8038330078125
+    //console.log(totalLength);
+
+repeat();
+
+ function repeat() {
+    path
+      .attr("stroke-dasharray",totalLength+ " " + totalLength)
+      .attr("stroke-dashoffset", totalLength)
+      .transition()
+        .duration(2000)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0)
+           .attr("stroke-dasharray", totalLength*2 + " " + totalLength*2)
+        .each("end", repeat);
+}
+
+
+
+}
+
+
+
+function sleep (time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+</script>
